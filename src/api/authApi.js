@@ -6,7 +6,7 @@ export default {
   },
 
   register(email, password) {
-    return apiClient.post('/api/users/register', {
+    return apiClient.post('api/users/register', {
       email,
       password,
     });
