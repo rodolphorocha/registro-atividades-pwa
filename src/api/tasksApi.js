@@ -5,8 +5,9 @@ const tasksApi = {
     return apiClient.get('/tasks')
   },
 
-  create(title) {
-    return apiClient.post('/tasks', { title })
+  // ✅ Corrigido: Agora aceita o objeto payload direto ({ title: '...', attachment_key: '...' })
+  create(payload) {
+    return apiClient.post('/tasks', payload)
   },
 
   update(id, data) {
