@@ -119,7 +119,7 @@ function handleSubmit() {
   // Adiciona a imagem apenas se houver uma selecionada
   // (caso seu backend exija em camelCase, mude para imgAttachmentKey)
   if (imgAttachmentKey.value) {
-    payload.attachment_key = imgAttachmentKey.value
+    payload.imgAttachmentKey= imgAttachmentKey.value
   }
 
   if (props.editingTask) {
