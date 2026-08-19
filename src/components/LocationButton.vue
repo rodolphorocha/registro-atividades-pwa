@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted } from 'vue';
-import { useGeolocation } from '@/composables/useGeolocation';
+import { onMounted } from 'vue'
+import { useGeolocation } from '@/composables/useGeolocation'
+import TaskLocationMap from './TaskLocationMap.vue'
 
 const {
   isSupported,
@@ -11,16 +12,16 @@ const {
   readPermissionState,
   requestCurrentLocation,
   clearLocation
-} = useGeolocation();
+} = useGeolocation()
 
 onMounted(() => {
-  readPermissionState();
-});
+  readPermissionState()
+})
 
 async function handleRequestLocation() {
-  const result = await requestCurrentLocation();
+  const result = await requestCurrentLocation()
   if (result) {
-    console.log('Localização capturada:', result);
+    console.log('Localização capturada com sucesso:', result)
   }
 }
 </script>
@@ -44,7 +45,7 @@ async function handleRequestLocation() {
           :disabled="loadingLocation"
           @click="handleRequestLocation"
         >
-          {{ loadingLocation ? 'Carregando...' : 'Obter Localização' }}
+          {{ loadingLocation ? 'Buscando...' : 'Obter Localização' }}
         </button>
 
         <button
@@ -63,11 +64,15 @@ async function handleRequestLocation() {
       <div v-if="location" class="location-card">
         <h3>Localização Capturada:</h3>
         <ul>
+          <li v-if="location.label"><strong>Endereço / Rua:</strong> {{ location.label }}</li>
           <li><strong>Latitude:</strong> {{ location.latitude }}</li>
           <li><strong>Longitude:</strong> {{ location.longitude }}</li>
           <li><strong>Precisão:</strong> {{ location.accuracy }} metros</li>
           <li><strong>Data/Hora:</strong> {{ new Date(location.timestamp).toLocaleString() }}</li>
         </ul>
+
+        <!-- Renderiza o mapa interativo do Leaflet -->
+        <TaskLocationMap :location="location" />
       </div>
     </div>
   </div>
@@ -75,12 +80,13 @@ async function handleRequestLocation() {
 
 <style scoped>
 .geo-container {
-  max-width: 400px;
+  max-width: 450px;
   margin: 20px auto;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   font-family: sans-serif;
+  background-color: #fff;
 }
 
 .permission-status {
@@ -133,6 +139,7 @@ button:disabled {
   border-radius: 6px;
   border-left: 4px solid #41b883;
   margin-top: 15px;
+  text-align: left;
 }
 
 .location-card ul {
@@ -142,6 +149,7 @@ button:disabled {
 }
 
 .location-card li {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
 }
 </style>

@@ -1,16 +1,33 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import TaskForm from '../components/TaskForm.vue'
 import TaskItem from '../components/TaskItem.vue'
 import InstallButton from '../components/InstallButton.vue'
-import LocationButton from '../components/LocationButton.vue'
+//import LocationButton from '../components/LocationButton.vue'
 import { useTasksStore } from '../stores/tasks.js'
 
 const store = useTasksStore()
 const editingTask = ref(null)
+const onlyWithLocation = ref(false)
 
 onMounted(() => {
   store.fetchTasks()
+})
+
+// Filtra as tarefas pendentes conforme o checkbox
+const filteredPendingTasks = computed(() => {
+  if (onlyWithLocation.value) {
+    return store.pendingTasks.filter((t) => t.latitude != null)
+  }
+  return store.pendingTasks
+})
+
+// Filtra as tarefas concluídas conforme o checkbox
+const filteredCompletedTasks = computed(() => {
+  if (onlyWithLocation.value) {
+    return store.completedTasks.filter((t) => t.latitude != null)
+  }
+  return store.completedTasks
 })
 
 function handleAdd(payload) {
@@ -51,15 +68,21 @@ function handleRemove(id) {
       @cancel="handleCancel"
     />
 
-    <LocationButton />
+    <!-- Filtro de localização (Atividade 2) -->
+    <div class="filters">
+      <label class="filter-label">
+        <input type="checkbox" v-model="onlyWithLocation" />
+        Somente com localização
+      </label>
+    </div>
 
     <p v-if="store.loading" class="loading-message">Carregando tarefas...</p>
 
     <template v-else>
-      <section v-if="store.pendingTasks.length > 0">
-        <h2 class="section-title">Pendentes ({{ store.pendingTasks.length }})</h2>
+      <section v-if="filteredPendingTasks.length > 0">
+        <h2 class="section-title">Pendentes ({{ filteredPendingTasks.length }})</h2>
         <TaskItem
-          v-for="task in store.pendingTasks"
+          v-for="task in filteredPendingTasks"
           :key="task.id"
           :task="task"
           @toggle="handleToggle"
@@ -68,10 +91,10 @@ function handleRemove(id) {
         />
       </section>
 
-      <section v-if="store.completedTasks.length > 0">
-        <h2 class="section-title">Concluídas ({{ store.completedTasks.length }})</h2>
+      <section v-if="filteredCompletedTasks.length > 0">
+        <h2 class="section-title">Concluídas ({{ filteredCompletedTasks.length }})</h2>
         <TaskItem
-          v-for="task in store.completedTasks"
+          v-for="task in filteredCompletedTasks"
           :key="task.id"
           :task="task"
           @toggle="handleToggle"
@@ -83,6 +106,9 @@ function handleRemove(id) {
       <p v-if="store.tasks.length === 0" class="empty-message">
         Nenhuma tarefa cadastrada. Adicione uma acima.
       </p>
+      <p v-else-if="onlyWithLocation && filteredPendingTasks.length === 0 && filteredCompletedTasks.length === 0" class="empty-message">
+        Nenhuma tarefa possui localização salva.
+      </p>
     </template>
 
     <InstallButton />
@@ -90,6 +116,22 @@ function handleRemove(id) {
 </template>
 
 <style scoped>
+.filters {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+}
+
+.filter-label {
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
 .section-title {
   font-size: 1rem;
   color: #666;

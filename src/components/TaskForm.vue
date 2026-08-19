@@ -20,52 +20,104 @@
       </button>
     </div>
 
-   <div class="image-section">
-  <!-- Preview da imagem já salva ou capturada -->
-  <img
-    v-if="previewUrl || editingTask?.img_url"
-    :src="previewUrl || editingTask?.img_url"
-    class="image-preview"
-    alt="Imagem da tarefa"
-  />
+    <!-- Seção de Imagem -->
+    <div class="image-section">
+      <img
+        v-if="previewUrl || editingTask?.img_url"
+        :src="previewUrl || editingTask?.img_url"
+        class="image-preview"
+        alt="Imagem da tarefa"
+      />
 
-  <!-- Input com capture (padrão) -->
-  <label class="image-label" :class="{ disabled: uploading }">
-    <span v-if="uploading" class="upload-status">Enviando...</span>
-    <span v-else>Adicionar imagem</span>
-    <input
-      type="file"
-      accept="image/jpeg,image/png"
-      capture="environment"
-      class="image-input"
-      :disabled="uploading"
-      @change="handleImageChange"
-    />
-  </label>
+      <label class="image-label" :class="{ disabled: uploading }">
+        <span v-if="uploading" class="upload-status">Enviando...</span>
+        <span v-else>Adicionar imagem</span>
+        <input
+          type="file"
+          accept="image/jpeg,image/png"
+          capture="environment"
+          class="image-input"
+          :disabled="uploading"
+          @change="handleImageChange"
+        />
+      </label>
 
-  <!-- Alternativa com preview ao vivo -->
-  <button
-    type="button"
-    class="task-button-secondary"
-    @click="showCameraCapture = !showCameraCapture"
-  >
-    {{ showCameraCapture ? 'Fechar câmera' : 'Abrir preview ao vivo' }}
-  </button>
+      <button
+        type="button"
+        class="task-button-secondary"
+        @click="showCameraCapture = !showCameraCapture"
+      >
+        {{ showCameraCapture ? 'Fechar câmera' : 'Abrir preview ao vivo' }}
+      </button>
 
-  <CameraCapture
-    v-if="showCameraCapture"
-    @captured="handleCameraCapture"
-  />
-</div>
+      <CameraCapture
+        v-if="showCameraCapture"
+        @captured="handleCameraCapture"
+      />
+    </div>
+
+    <!-- Seção de Geolocalização -->
+    <div class="location-section">
+      <div class="location-actions">
+        <button
+          type="button"
+          class="btn-geo"
+          :disabled="loadingLocation"
+          @click="handleGetLocation"
+        >
+          {{ loadingLocation ? 'Buscando...' : 'Obter Localização' }}
+        </button>
+
+        <button
+          v-if="location"
+          type="button"
+          class="btn-clear"
+          @click="clearLocation"
+        >
+          Remover Localização
+        </button>
+      </div>
+
+      <p v-if="locationError" class="geo-error">{{ locationError }}</p>
+
+      <div v-if="location" class="location-preview">
+        <!-- Atividade 1: Selo de Qualidade -->
+        <span v-if="accuracyLevel" :class="`accuracy-badge accuracy-badge--${accuracyLevel}`">
+          Precisão {{ accuracyLevel }}
+        </span>
+
+        <p v-if="location.label"><strong>Endereço:</strong> {{ location.label }}</p>
+        <p class="coords">
+          <small>Lat: {{ location.latitude }} | Lng: {{ location.longitude }}</small>
+        </p>
+
+        <!-- Atividade 3: Opção de localização aproximada -->
+        <label class="privacy-option">
+          <input type="checkbox" v-model="useApproximateLocation" />
+          Salvar localização aproximada (privacidade)
+        </label>
+
+        <TaskLocationMap :location="displayLocation" />
+
+        <p class="location-mode-info">
+          {{ useApproximateLocation ? 'Exibindo: Localização aproximada (~1km)' : 'Exibindo: Localização exata' }}
+        </p>
+      </div>
+    </div>
   </form>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import tasksApi from '../api/tasksApi.js'
 import CameraCapture from './CameraCapture.vue'
+import TaskLocationMap from './TaskLocationMap.vue'
+import { useGeolocation } from '../composables/useGeolocation.js'
+import geocodingApi from '../api/geocodingApi.js'
+import { classifyAccuracy, roundCoordinate, buildLocationPayload } from '../utils/location.js'
 
 const showCameraCapture = ref(false)
+const useApproximateLocation = ref(false)
 
 const props = defineProps({
   editingTask: {
@@ -80,6 +132,31 @@ const previewUrl = ref(null)
 const imgAttachmentKey = ref(null)
 const uploading = ref(false)
 
+const {
+  loadingLocation,
+  locationError,
+  location,
+  requestCurrentLocation,
+  clearLocation,
+  setLocationFromTask,
+  setLocationLabel
+} = useGeolocation()
+
+// Atividade 1: Nível de precisão computado
+const accuracyLevel = computed(() => classifyAccuracy(location.value?.accuracy))
+
+// Atividade 3: Localização ajustada para o mapa/payload
+const displayLocation = computed(() => {
+  if (!location.value) return null
+  if (!useApproximateLocation.value) return location.value
+
+  return {
+    ...location.value,
+    latitude: roundCoordinate(location.value.latitude),
+    longitude: roundCoordinate(location.value.longitude),
+  }
+})
+
 watch(
   () => props.editingTask,
   (task) => {
@@ -87,6 +164,12 @@ watch(
     if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = null
     imgAttachmentKey.value = null
+
+    if (task) {
+      setLocationFromTask(task)
+    } else {
+      clearLocation()
+    }
   },
 )
 
@@ -108,18 +191,32 @@ async function handleImageChange(event) {
   }
 }
 
+async function handleGetLocation() {
+  const captured = await requestCurrentLocation()
+  if (!captured) return
+
+  try {
+    const address = await geocodingApi.reverse(
+      captured.latitude,
+      captured.longitude
+    )
+    setLocationLabel(address?.label)
+  } catch {
+    locationError.value = 'Localização obtida, mas não foi possível identificar a rua.'
+  }
+}
+
 function handleSubmit() {
   if (!newTask.value.trim()) return
 
-  // Cria o objeto com os dados básicos
+  // Atividade 3: Monta o payload aplicando o arredondamento se selecionado
   const payload = {
     title: newTask.value.trim(),
+    ...buildLocationPayload(displayLocation.value)
   }
 
-  // Adiciona a imagem apenas se houver uma selecionada
-  // (caso seu backend exija em camelCase, mude para imgAttachmentKey)
   if (imgAttachmentKey.value) {
-    payload.imgAttachmentKey= imgAttachmentKey.value
+    payload.imgAttachmentKey = imgAttachmentKey.value
   }
 
   if (props.editingTask) {
@@ -132,6 +229,8 @@ function handleSubmit() {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
   previewUrl.value = null
   imgAttachmentKey.value = null
+  useApproximateLocation.value = false
+  clearLocation()
 }
 
 function handleCancel() {
@@ -139,24 +238,26 @@ function handleCancel() {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
   previewUrl.value = null
   imgAttachmentKey.value = null
+  useApproximateLocation.value = false
+  clearLocation()
   emit('cancel')
 }
 
 function handleCameraCapture(file) {
-  previewUrl.value = URL.createObjectURL(file);
-  uploading.value = true;
+  previewUrl.value = URL.createObjectURL(file)
+  uploading.value = true
   tasksApi
     .uploadImage(file)
     .then((response) => {
-      imgAttachmentKey.value = response.data.attachment_key;
+      imgAttachmentKey.value = response.data.attachment_key
     })
     .catch((err) => {
-      console.error(err);
-      previewUrl.value = null;
+      console.error(err)
+      previewUrl.value = null
     })
     .finally(() => {
-      uploading.value = false;
-    });
+      uploading.value = false
+    })
 }
 </script>
 
@@ -220,6 +321,16 @@ function handleCameraCapture(file) {
   border-color: #aaa;
 }
 
+.task-button-secondary {
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
 .image-section {
   display: flex;
   align-items: center;
@@ -229,6 +340,7 @@ function handleCameraCapture(file) {
   border-radius: 8px;
   border: 1px dashed #ccc;
   flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
 .image-preview {
@@ -271,10 +383,87 @@ function handleCameraCapture(file) {
   color: #888;
 }
 
-.image-help {
+.location-section {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.location-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-geo {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.btn-geo:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-clear {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.location-preview {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.coords {
+  color: #666;
+  margin: 4px 0 8px 0;
+}
+
+.geo-error {
+  color: #c0392b;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+/* Estilos do Selo de Qualidade */
+.accuracy-badge {
+  display: inline-block;
   font-size: 0.75rem;
-  color: #999;
-  margin: 0;
-  flex-basis: 100%;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.accuracy-badge--boa { background: #d4edda; color: #155724; }
+.accuracy-badge--moderada { background: #fff3cd; color: #856404; }
+.accuracy-badge--baixa { background: #f8d7da; color: #721c24; }
+
+/* Estilos do Checkbox de Privacidade */
+.privacy-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  color: #444;
+  cursor: pointer;
+}
+
+.location-mode-info {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 4px;
+  font-style: italic;
 }
 </style>
