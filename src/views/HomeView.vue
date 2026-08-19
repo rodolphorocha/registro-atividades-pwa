@@ -1,3 +1,45 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import TaskForm from '../components/TaskForm.vue'
+import TaskItem from '../components/TaskItem.vue'
+import InstallButton from '../components/InstallButton.vue'
+import LocationButton from '../components/LocationButton.vue'
+import { useTasksStore } from '../stores/tasks.js'
+
+const store = useTasksStore()
+const editingTask = ref(null)
+
+onMounted(() => {
+  store.fetchTasks()
+})
+
+function handleAdd(payload) {
+  store.addTask(payload)
+}
+
+function handleUpdate(id, payload) {
+  store.updateTask(id, payload)
+  editingTask.value = null
+}
+
+function handleCancel() {
+  editingTask.value = null
+}
+
+function handleEdit(task) {
+  editingTask.value = task
+}
+
+function handleToggle(id) {
+  store.toggleTask(id)
+}
+
+function handleRemove(id) {
+  if (editingTask.value?.id === id) editingTask.value = null
+  store.removeTask(id)
+}
+</script>
+
 <template>
   <div>
     <p v-if="store.error" class="error-message">{{ store.error }}</p>
@@ -8,6 +50,8 @@
       @update="handleUpdate"
       @cancel="handleCancel"
     />
+
+    <LocationButton />
 
     <p v-if="store.loading" class="loading-message">Carregando tarefas...</p>
 
@@ -44,47 +88,6 @@
     <InstallButton />
   </div>
 </template>
-
-<script setup>
-import { onMounted, ref } from 'vue'
-import TaskForm from '../components/TaskForm.vue'
-import TaskItem from '../components/TaskItem.vue'
-import InstallButton from '../components/InstallButton.vue'
-import { useTasksStore } from '../stores/tasks.js'
-
-const store = useTasksStore()
-const editingTask = ref(null)
-
-onMounted(() => {
-  store.fetchTasks()
-})
-
-function handleAdd(payload) {
-  store.addTask(payload)
-}
-
-function handleUpdate(id, payload) {
-  store.updateTask(id, payload)
-  editingTask.value = null
-}
-
-function handleCancel() {
-  editingTask.value = null
-}
-
-function handleEdit(task) {
-  editingTask.value = task
-}
-
-function handleToggle(id) {
-  store.toggleTask(id)
-}
-
-function handleRemove(id) {
-  if (editingTask.value?.id === id) editingTask.value = null
-  store.removeTask(id)
-}
-</script>
 
 <style scoped>
 .section-title {
