@@ -20,7 +20,7 @@
       </button>
     </div>
 
-    <!-- Seção de Imagem -->
+
     <div class="image-section">
       <img
         v-if="previewUrl || editingTask?.img_url"
@@ -81,7 +81,7 @@
       <p v-if="locationError" class="geo-error">{{ locationError }}</p>
 
       <div v-if="location" class="location-preview">
-        <!-- Atividade 1: Selo de Qualidade -->
+
         <span v-if="accuracyLevel" :class="`accuracy-badge accuracy-badge--${accuracyLevel}`">
           Precisão {{ accuracyLevel }}
         </span>
@@ -91,7 +91,7 @@
           <small>Lat: {{ location.latitude }} | Lng: {{ location.longitude }}</small>
         </p>
 
-        <!-- Atividade 3: Opção de localização aproximada -->
+
         <label class="privacy-option">
           <input type="checkbox" v-model="useApproximateLocation" />
           Salvar localização aproximada (privacidade)
@@ -142,10 +142,10 @@ const {
   setLocationLabel
 } = useGeolocation()
 
-// Atividade 1: Nível de precisão computado
+
 const accuracyLevel = computed(() => classifyAccuracy(location.value?.accuracy))
 
-// Atividade 3: Localização ajustada para o mapa/payload
+
 const displayLocation = computed(() => {
   if (!location.value) return null
   if (!useApproximateLocation.value) return location.value
@@ -209,7 +209,7 @@ async function handleGetLocation() {
 function handleSubmit() {
   if (!newTask.value.trim()) return
 
-  // Atividade 3: Monta o payload aplicando o arredondamento se selecionado
+
   const payload = {
     title: newTask.value.trim(),
     ...buildLocationPayload(displayLocation.value)
@@ -436,7 +436,7 @@ function handleCameraCapture(file) {
   margin-top: 8px;
 }
 
-/* Estilos do Selo de Qualidade */
+
 .accuracy-badge {
   display: inline-block;
   font-size: 0.75rem;
@@ -449,7 +449,7 @@ function handleCameraCapture(file) {
 .accuracy-badge--moderada { background: #fff3cd; color: #856404; }
 .accuracy-badge--baixa { background: #f8d7da; color: #721c24; }
 
-/* Estilos do Checkbox de Privacidade */
+
 .privacy-option {
   display: flex;
   align-items: center;

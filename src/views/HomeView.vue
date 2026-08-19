@@ -14,7 +14,7 @@ onMounted(() => {
   store.fetchTasks()
 })
 
-// Filtra as tarefas pendentes conforme o checkbox
+
 const filteredPendingTasks = computed(() => {
   if (onlyWithLocation.value) {
     return store.pendingTasks.filter((t) => t.latitude != null)
@@ -22,7 +22,6 @@ const filteredPendingTasks = computed(() => {
   return store.pendingTasks
 })
 
-// Filtra as tarefas concluídas conforme o checkbox
 const filteredCompletedTasks = computed(() => {
   if (onlyWithLocation.value) {
     return store.completedTasks.filter((t) => t.latitude != null)
@@ -68,7 +67,6 @@ function handleRemove(id) {
       @cancel="handleCancel"
     />
 
-    <!-- Filtro de localização (Atividade 2) -->
     <div class="filters">
       <label class="filter-label">
         <input type="checkbox" v-model="onlyWithLocation" />

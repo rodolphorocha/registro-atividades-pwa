@@ -14,7 +14,7 @@
           <span class="task-title">{{ task.title }}</span>
         </label>
 
-        <!-- Atividade 2: Indicador de localização na lista -->
+
         <span
           v-if="task.location_label"
           class="task-location-tag"
@@ -40,7 +40,7 @@
       </div>
     </div>
 
-    <!-- Atividade 4: Mini-mapa ao expandir a tarefa -->
+
     <div v-if="isExpanded && task.latitude && task.longitude" class="task-location">
       <div class="location-card">
         <h3>Localização Capturada:</h3>
@@ -84,7 +84,7 @@ defineProps({
 
 defineEmits(['toggle', 'remove', 'edit'])
 
-// Controle local de expansão do card
+
 const isExpanded = ref(false)
 </script>
 
@@ -148,7 +148,7 @@ const isExpanded = ref(false)
   color: #999;
 }
 
-/* Atividade 2: Tag de localização */
+
 .task-location-tag {
   font-size: 0.75rem;
   color: #27ae60;

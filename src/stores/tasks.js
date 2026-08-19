@@ -28,7 +28,7 @@ export const useTasksStore = defineStore('tasks', () => {
     if (!payload.title?.trim()) return
     error.value = null
 
-    // Monta o body incluindo todos os dados da geolocalização
+
     const body = {
       title: payload.title.trim(),
       latitude: payload.latitude ?? null,
@@ -84,7 +84,7 @@ export const useTasksStore = defineStore('tasks', () => {
     if (payload.title !== undefined) body.title = payload.title.trim()
     if (payload.imgAttachmentKey != null) body.img_attachment_key = payload.imgAttachmentKey
 
-    // Inclui dados de geolocalização se estiverem presentes no payload
+
     if ('latitude' in payload) body.latitude = payload.latitude
     if ('longitude' in payload) body.longitude = payload.longitude
     if ('geolocation_accuracy' in payload) body.geolocation_accuracy = payload.geolocation_accuracy

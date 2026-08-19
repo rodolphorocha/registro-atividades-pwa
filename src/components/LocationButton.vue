@@ -71,7 +71,7 @@ async function handleRequestLocation() {
           <li><strong>Data/Hora:</strong> {{ new Date(location.timestamp).toLocaleString() }}</li>
         </ul>
 
-        <!-- Renderiza o mapa interativo do Leaflet -->
+
         <TaskLocationMap :location="location" />
       </div>
     </div>

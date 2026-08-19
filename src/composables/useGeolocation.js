@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import geocodingApi from '../api/geocodingApi.js' // 1. Importe a API de geocodificação
+import geocodingApi from '../api/geocodingApi.js' 
 
 export function useGeolocation() {
   const isSupported =
@@ -58,14 +58,14 @@ export function useGeolocation() {
 
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
-        async (position) => { // 2. Marque como async para usar await
+        async (position) => {
           permissionState.value = 'granted'
 
           const lat = position.coords.latitude
           const lng = position.coords.longitude
           let addressLabel = null
 
-          // 3. Busca o nome da rua/endereço
+
           try {
             const geocodeResult = await geocodingApi.reverse(lat, lng)
             addressLabel = geocodeResult?.label ?? null
